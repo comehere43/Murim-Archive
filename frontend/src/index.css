@@ -109,3 +109,39 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.book-card {
+  width: 220px;
+  padding: 16px;
+  border: 1px solid #444;
+}
+
+.book-cover {
+  min-height: 280px;
+  border: 1px solid #666;
+  padding: 20px;
+}
+
+.book-cover h2 {
+  margin-top: 40px;
+}
+
+.book-info {
+  margin-top: 12px;
+}
+
+.book-original-info {
+  opacity: 0;
+  margin-top: 8px;
+}
+
+.book-card:hover .book-original-info {
+  opacity: 1;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 220px);
+  gap: 24px;
+  justify-content: center;  
+}

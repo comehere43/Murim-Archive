@@ -1,9 +1,58 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { createBook } from "../api/books";
+
 
 function BookAddPage() {
+  const navigate = useNavigate();
+ 
   const [file, setFile] = useState<File | null>(null);
   const [titleMode, setTitleMode] = useState<"manual" | "ai" | null>(null);
   const [displayTitle, setDisplayTitle] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  async function handleSubmit() {
+    if (!file) {
+      setMessage("PDF를 선택해주십시오.");
+      return;
+    }
+
+    if (titleMode !== "manual") {
+      setMessage("현재는 직접 짓기 방식만 등록할 수 있습니다.");
+      return;
+    }
+
+    if (!displayTitle.trim()) {
+      setMessage("비급명을 입력해주십시오.");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("display_title", displayTitle);
+    formData.append("title_mode", "manual");
+    formData.append("cover_style", "navy");
+
+    setIsSubmitting(true);
+    setMessage("비급을 서고에 등록하고 있습니다...");
+
+    try {
+      
+        const data = await createBook(formData);
+
+      setMessage(
+        `「${data.display_title}」이(가) 서고에 등록되었습니다.`,
+      );
+      setIsSuccess(true);
+    } catch (error) {
+      console.error(error);
+      setMessage("비급 등록 중 문제가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main>
@@ -46,6 +95,10 @@ function BookAddPage() {
             onChange={(event) => setDisplayTitle(event.target.value)}
             placeholder="예: 전서천서록"
           />
+
+          <button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "등록 중..." : "서고에 등록"}
+          </button>
         </section>
       )}
 
@@ -56,6 +109,13 @@ function BookAddPage() {
           <p>서고지기의 작명 기능은 다음 단계에서 연결합니다.</p>
         </section>
       )}
+
+      {message && <p>{message}</p>}
+      {isSuccess && (
+  <button onClick={() => navigate("/keeper")}>
+    뒤로가기
+  </button>
+)}
     </main>
   );
 }

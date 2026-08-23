@@ -22,6 +22,11 @@ class Book(Base):
 
     total_pages: Mapped[int] = mapped_column(Integer, nullable=False)
     current_page: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    max_read_page: Mapped[int] = mapped_column(Integer,
+    default=1,
+    server_default="1",
+    nullable=False,
+)
 
     cover_style: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
