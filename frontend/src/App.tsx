@@ -1,20 +1,12 @@
-import { useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
+
+import BookAddPage from "./pages/BookAddPage";
 
 function App() {
-  const [message, setMessage] = useState("백엔드 연결 확인 중...");
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/")
-      .then((response) => response.json())
-      .then((data) => setMessage(data.message))
-      .catch(() => setMessage("백엔드 연결 실패"));
-  }, []);
-
   return (
-    <main>
-      <h1>Murim Archive</h1>
-      <p>{message}</p>
-    </main>
+    <Routes>
+      <Route path="/books/add" element={<BookAddPage />} />
+    </Routes>
   );
 }
 
