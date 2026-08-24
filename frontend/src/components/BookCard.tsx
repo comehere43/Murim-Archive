@@ -22,22 +22,14 @@ function BookCard({
   coverStyle,
 }: BookCardProps) {
   const navigate = useNavigate();
-    
+
   const progress =
-    totalPages > 0
-      ? Math.round((maxReadPage / totalPages) * 100)
-      : 0;
+    totalPages > 0 ? Math.round((maxReadPage / totalPages) * 100) : 0;
 
   return (
-    <article
-      className="book-card"
-      onClick={() => navigate(`/books/${id}`)}
-    >
-
+    <article className="book-card" onClick={() => navigate(`/books/${id}`)}>
       <div className="book-cover">
-        <span className="book-cover-style">
-          {coverStyle ?? "default"}
-        </span>
+        <span className="book-cover-style">{coverStyle ?? "default"}</span>
 
         <h2>{displayTitle}</h2>
       </div>
@@ -51,9 +43,7 @@ function BookCard({
       </div>
 
       <div className="book-original-info">
-        <p>
-          原典 · {originalTitle ?? originalFilename}
-        </p>
+        <p>原典 · {originalTitle ?? originalFilename}</p>
       </div>
     </article>
   );

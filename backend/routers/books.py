@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Book
-from schemas.books import PositionUpdate, ProgressUpdate
+from schemas.books import PositionUpdate, ProgressUpdate, BookUpdate
 
 
 router = APIRouter(
@@ -191,4 +191,63 @@ def update_book_position(
     return {
         "id": book.id,
         "current_page": book.current_page,
+    }
+
+@router.patch("/{book_id}")
+def update_book(
+    book_id: int,
+    update: BookUpdate,
+    db: Session = Depends(get_db),
+):
+    book = db.query(Book).filter(Book.id == book_id).first()
+
+    if book is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found",
+        )
+
+    book.display_title = update.display_title
+    book.original_title = update.original_title
+    book.cover_style = update.cover_style
+
+    db.commit()
+    db.refresh(book)
+
+    return {
+        "id": book.id,
+        "display_title": book.display_title,
+        "original_title": book.original_title,
+        "original_filename": book.original_filename,
+        "title_mode": book.title_mode,
+        "total_pages": book.total_pages,
+        "current_page": book.current_page,
+        "max_read_page": book.max_read_page,
+        "cover_style": book.cover_style,
+    }
+
+@router.delete("/{book_id}")
+def delete_book(
+    book_id: int,
+    db: Session = Depends(get_db),
+):
+    book = db.query(Book).filter(Book.id == book_id).first()
+
+    if book is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found",
+        )
+
+    file_path = Path(book.file_path)
+
+    db.delete(book)
+    db.commit()
+
+    if file_path.exists():
+        file_path.unlink()
+
+    return {
+        "message": "Book deleted successfully",
+        "id": book_id,
     }

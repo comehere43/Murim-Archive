@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createBook } from "../api/books";
 
-
 function BookAddPage() {
   const navigate = useNavigate();
- 
+
   const [file, setFile] = useState<File | null>(null);
   const [titleMode, setTitleMode] = useState<"manual" | "ai" | null>(null);
   const [displayTitle, setDisplayTitle] = useState("");
@@ -39,12 +38,9 @@ function BookAddPage() {
     setMessage("비급을 서고에 등록하고 있습니다...");
 
     try {
-      
-        const data = await createBook(formData);
+      const data = await createBook(formData);
 
-      setMessage(
-        `「${data.display_title}」이(가) 서고에 등록되었습니다.`,
-      );
+      setMessage(`「${data.display_title}」이(가) 서고에 등록되었습니다.`);
       setIsSuccess(true);
     } catch (error) {
       console.error(error);
@@ -76,13 +72,9 @@ function BookAddPage() {
       <section>
         <h2>비급명을 어떻게 정하시겠습니까?</h2>
 
-        <button onClick={() => setTitleMode("manual")}>
-          내가 직접 짓기
-        </button>
+        <button onClick={() => setTitleMode("manual")}>내가 직접 짓기</button>
 
-        <button onClick={() => setTitleMode("ai")}>
-          서고지기에게 맡기기
-        </button>
+        <button onClick={() => setTitleMode("ai")}>서고지기에게 맡기기</button>
       </section>
 
       {titleMode === "manual" && (
@@ -112,10 +104,8 @@ function BookAddPage() {
 
       {message && <p>{message}</p>}
       {isSuccess && (
-  <button onClick={() => navigate("/keeper")}>
-    뒤로가기
-  </button>
-)}
+        <button onClick={() => navigate("/keeper")}>뒤로가기</button>
+      )}
     </main>
   );
 }

@@ -95,3 +95,44 @@ export async function saveBookPosition(
 
   return response.json();
 }
+
+export async function deleteBook(bookId: number) {
+  const response = await fetch(
+    `${API_BASE_URL}/books/${bookId}`,
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("비급을 삭제하지 못했습니다.");
+  }
+
+  return response.json();
+}
+
+export async function updateBook(
+  bookId: number,
+  data: {
+    display_title: string;
+    original_title: string | null;
+    cover_style: string | null;
+  },
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/books/${bookId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("비급 정보를 수정하지 못했습니다.");
+  }
+
+  return response.json();
+}
