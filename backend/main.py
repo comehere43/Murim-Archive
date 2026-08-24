@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from routers.books import router as books_router
-
+from routers.titles import router as titles_router
 
 app = FastAPI()
 
@@ -30,6 +30,7 @@ app.mount(
 
 
 app.include_router(books_router)
+app.include_router(titles_router)
 
 
 @app.get("/")

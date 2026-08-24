@@ -65,11 +65,25 @@ export async function createBook(formData: FormData) {
     body: formData,
   });
 
+  if (response.status === 409) {
+    const data = await response.json();
+
+    return {
+      duplicate: true,
+      existingBook: data.detail.existing_book,
+    };
+  }
+
   if (!response.ok) {
     throw new Error("책 등록에 실패했습니다.");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  return {
+    duplicate: false,
+    book: data,
+  };
 }
 
 export async function saveBookPosition(
@@ -135,4 +149,36 @@ export async function updateBook(
   }
 
   return response.json();
+}
+
+export type TitleCandidate = {
+  title: string;
+  hanja: string;
+  meaning: string;
+  reason: string;
+};
+
+export async function generateTitles(
+  originalTitle: string,
+): Promise<TitleCandidate[]> {
+  const response = await fetch(
+    "http://127.0.0.1:8000/titles/generate",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        original_title: originalTitle,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("서고지기의 작명에 실패했습니다.");
+  }
+
+  const data = await response.json();
+
+  return data.titles;
 }

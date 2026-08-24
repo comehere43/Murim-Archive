@@ -19,6 +19,7 @@ class Book(Base):
 
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True,)
 
     total_pages: Mapped[int] = mapped_column(Integer, nullable=False)
     current_page: Mapped[int] = mapped_column(Integer, default=1, nullable=False)

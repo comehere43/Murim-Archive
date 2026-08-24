@@ -1,3 +1,5 @@
+import hashlib
+
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,7 +10,6 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Book
 from schemas.books import PositionUpdate, ProgressUpdate, BookUpdate
-
 
 router = APIRouter(
     prefix="/books",
@@ -28,8 +29,26 @@ async def create_book(
     title_mode: str = Form(...),
     cover_style: str | None = Form(None),
     db: Session = Depends(get_db),
+    force_duplicate: bool = Form(False),
 ):
     contents = await file.read()
+
+    file_hash = hashlib.sha256(contents).hexdigest()
+
+    existing_book = db.query(Book).filter(Book.file_hash == file_hash).first()
+
+    if existing_book is not None and not force_duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Duplicate PDF",
+                "existing_book": {
+                    "id": existing_book.id,
+                    "display_title": existing_book.display_title,
+                    "original_title": existing_book.original_title,
+                },
+            },
+        )
 
     pdf = fitz.open(stream=contents, filetype="pdf")
     total_pages = pdf.page_count
@@ -47,6 +66,7 @@ async def create_book(
         title_mode=title_mode,
         original_filename=file.filename or stored_filename,
         file_path=str(file_path),
+        file_hash=file_hash,
         total_pages=total_pages,
         current_page=1,
         max_read_page=1,
@@ -157,6 +177,7 @@ def update_book_progress(
         "max_read_page": book.max_read_page,
     }
 
+
 @router.patch("/{book_id}/position")
 def update_book_position(
     book_id: int,
@@ -193,6 +214,7 @@ def update_book_position(
         "current_page": book.current_page,
     }
 
+
 @router.patch("/{book_id}")
 def update_book(
     book_id: int,
@@ -225,6 +247,7 @@ def update_book(
         "max_read_page": book.max_read_page,
         "cover_style": book.cover_style,
     }
+
 
 @router.delete("/{book_id}")
 def delete_book(
