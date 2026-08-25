@@ -13,19 +13,69 @@ class Book(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    original_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    display_title: Mapped[str] = mapped_column(String(255), nullable=False)
-    title_mode: Mapped[str] = mapped_column(String(20), nullable=False)
+    original_title: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
 
-    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True,)
+    source_description: Mapped[str | None] = mapped_column(
+        String(1000),
+        nullable=True,
+    )
 
-    total_pages: Mapped[int] = mapped_column(Integer, nullable=False)
-    current_page: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    max_read_page: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
+    display_title: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
 
-    cover_style: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    title_mode: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    original_filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    file_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+
+    file_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
+
+    total_pages: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    current_page: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
+    max_read_page: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        server_default="1",
+        nullable=False,
+    )
+
+    cover_style: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    cover_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

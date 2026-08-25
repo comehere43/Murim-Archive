@@ -26,8 +26,10 @@ async def create_book(
     file: UploadFile = File(...),
     display_title: str = Form(...),
     original_title: str | None = Form(None),
+    source_description: str | None = Form(None),
     title_mode: str = Form(...),
     cover_style: str | None = Form(None),
+    cover_color: str | None = Form(None),
     db: Session = Depends(get_db),
     force_duplicate: bool = Form(False),
 ):
@@ -62,6 +64,7 @@ async def create_book(
 
     book = Book(
         original_title=original_title,
+        source_description=source_description,
         display_title=display_title,
         title_mode=title_mode,
         original_filename=file.filename or stored_filename,
@@ -71,6 +74,7 @@ async def create_book(
         current_page=1,
         max_read_page=1,
         cover_style=cover_style,
+        cover_color=cover_color,
     )
 
     db.add(book)
@@ -83,10 +87,12 @@ async def create_book(
         "original_title": book.original_title,
         "original_filename": book.original_filename,
         "title_mode": book.title_mode,
+        "source_description": book.source_description,
         "total_pages": book.total_pages,
         "current_page": book.current_page,
         "max_read_page": book.max_read_page,
         "cover_style": book.cover_style,
+        "cover_color": book.cover_color,
     }
 
 
@@ -104,10 +110,12 @@ def get_books(
             "original_filename": book.original_filename,
             "file_path": book.file_path,
             "title_mode": book.title_mode,
+            "source_description": book.source_description,
             "total_pages": book.total_pages,
             "current_page": book.current_page,
             "max_read_page": book.max_read_page,
             "cover_style": book.cover_style,
+            "cover_color": book.cover_color,
         }
         for book in books
     ]
@@ -130,6 +138,7 @@ def get_book(
         "id": book.id,
         "display_title": book.display_title,
         "original_title": book.original_title,
+        "source_description": book.source_description,
         "original_filename": book.original_filename,
         "file_path": book.file_path,
         "title_mode": book.title_mode,
@@ -137,6 +146,7 @@ def get_book(
         "current_page": book.current_page,
         "max_read_page": book.max_read_page,
         "cover_style": book.cover_style,
+        "cover_color": book.cover_color,
     }
 
 
@@ -231,6 +241,7 @@ def update_book(
 
     book.display_title = update.display_title
     book.original_title = update.original_title
+    book.source_description = update.source_description
     book.cover_style = update.cover_style
 
     db.commit()
@@ -240,12 +251,14 @@ def update_book(
         "id": book.id,
         "display_title": book.display_title,
         "original_title": book.original_title,
+        "source_description": book.source_description,
         "original_filename": book.original_filename,
         "title_mode": book.title_mode,
         "total_pages": book.total_pages,
         "current_page": book.current_page,
         "max_read_page": book.max_read_page,
         "cover_style": book.cover_style,
+        "cover_color": book.cover_color,
     }
 
 

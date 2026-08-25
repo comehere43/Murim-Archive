@@ -32,6 +32,7 @@ function ReaderPage() {
   const latestPageRef = useRef(1);
   const positionSavedRef = useRef(false);
   const progressTimerRef = useRef<number | null>(null);
+  const pendingProgressPageRef = useRef<number | null>(null);
 
   useEffect(() => {
     async function fetchBook() {
@@ -65,6 +66,25 @@ function ReaderPage() {
         return;
       }
 
+      // 아직 300ms 대기 중인 진행률 저장이 있다면
+      // 타이머를 취소하고 최신 페이지를 즉시 저장한다.
+      if (progressTimerRef.current !== null) {
+        window.clearTimeout(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
+      const pendingPage = pendingProgressPageRef.current;
+
+      if (pendingPage !== null) {
+        saveBookProgress(book.id, pendingPage).catch((error) => {
+          console.error(error);
+        });
+
+        pendingProgressPageRef.current = null;
+      }
+
+      // 우리가 만든 "상세페이지로" 버튼에서 이미 위치를 저장했다면
+      // 같은 요청을 또 보내지 않는다.
       if (positionSavedRef.current) {
         return;
       }
@@ -91,18 +111,14 @@ function ReaderPage() {
         const newPage = Math.max(pageNumber - 1, 1);
 
         setPageNumber(newPage);
-        saveBookProgress(book.id, newPage).catch((error) => {
-          console.error(error);
-        });
+        saveProgress(book.id, newPage);
       }
 
       if (event.key === "ArrowRight") {
         const newPage = Math.min(pageNumber + 1, numPages);
 
         setPageNumber(newPage);
-        saveBookProgress(book.id, newPage).catch((error) => {
-          console.error(error);
-        });
+        saveProgress(book.id, newPage);
       }
     }
 
@@ -138,13 +154,23 @@ function ReaderPage() {
   const pdfUrl = `http://127.0.0.1:8000/${book.file_path.replace(/\\/g, "/")}`;
 
   function saveProgress(bookId: number, page: number) {
+    pendingProgressPageRef.current = page;
+
     if (progressTimerRef.current !== null) {
       window.clearTimeout(progressTimerRef.current);
     }
 
     progressTimerRef.current = window.setTimeout(async () => {
+      const pendingPage = pendingProgressPageRef.current;
+
+      if (pendingPage === null) {
+        return;
+      }
+
       try {
-        await saveBookProgress(bookId, page);
+        await saveBookProgress(bookId, pendingPage);
+        pendingProgressPageRef.current = null;
+        progressTimerRef.current = null;
       } catch (error) {
         console.error(error);
       }
@@ -200,6 +226,18 @@ function ReaderPage() {
 
   async function handleBack() {
     try {
+      if (progressTimerRef.current !== null) {
+        window.clearTimeout(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
+      const pendingPage = pendingProgressPageRef.current;
+
+      if (pendingPage !== null) {
+        await saveBookProgress(currentBookId, pendingPage);
+        pendingProgressPageRef.current = null;
+      }
+
       await saveBookPosition(currentBookId, pageNumber);
 
       positionSavedRef.current = true;
@@ -207,7 +245,7 @@ function ReaderPage() {
       navigate(`/books/${currentBookId}`);
     } catch (error) {
       console.error(error);
-      setMessage("마지막 위치를 저장하지 못했습니다.");
+      setMessage("마지막 읽기 정보를 저장하지 못했습니다.");
     }
   }
 

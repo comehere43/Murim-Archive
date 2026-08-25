@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { deleteBook, getBook, type Book } from "../api/books";
 
+import { getBookRealm } from "../utils/bookProgress";
+
 function BookDetailPage() {
   const { bookId } = useParams();
   const navigate = useNavigate();
@@ -45,6 +47,8 @@ function BookDetailPage() {
       ? Math.round((book.max_read_page / book.total_pages) * 100)
       : 0;
 
+  const realm = getBookRealm(book.max_read_page, book.total_pages);
+
   async function handleDelete() {
     const confirmed = window.confirm("이 비급을 서고에서 삭제하시겠습니까?");
 
@@ -67,7 +71,9 @@ function BookDetailPage() {
 
       <h1>{book.display_title}</h1>
 
-      <p>原典 · {book.original_title ?? book.original_filename}</p>
+      {book.original_title && <p>原典 · {book.original_title}</p>}
+
+      {book.source_description && <p>내용 설명 · {book.source_description}</p>}
 
       <p>
         마지막 위치: {book.current_page} / {book.total_pages} 페이지
@@ -76,6 +82,8 @@ function BookDetailPage() {
       <p>
         진행률 {progress}% · {book.max_read_page} / {book.total_pages} 페이지
       </p>
+
+      <p>수련 경지: {realm}</p>
 
       <button onClick={() => navigate(`/reader/${book.id}`)}>
         비급 펼치기

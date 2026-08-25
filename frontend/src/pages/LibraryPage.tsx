@@ -118,15 +118,14 @@ function LibraryPage() {
           <section className="book-grid">
             {paginatedBooks.map((book) => (
               <BookCard
-                key={book.id}
                 id={book.id}
                 displayTitle={book.display_title}
                 originalTitle={book.original_title}
                 originalFilename={book.original_filename}
-                currentPage={book.current_page}
                 maxReadPage={book.max_read_page}
                 totalPages={book.total_pages}
                 coverStyle={book.cover_style}
+                coverColor={book.cover_color}
               />
             ))}
           </section>

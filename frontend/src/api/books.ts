@@ -4,6 +4,7 @@ export type Book = {
   id: number;
   display_title: string;
   original_title: string | null;
+  source_description: string | null;
   original_filename: string;
   file_path?: string;
   title_mode: string;
@@ -11,6 +12,7 @@ export type Book = {
   current_page: number;
   max_read_page: number;
   cover_style: string | null;
+  cover_color: string | null;
 };
 
 export async function getBooks(): Promise<Book[]> {
@@ -24,9 +26,7 @@ export async function getBooks(): Promise<Book[]> {
 }
 
 export async function getBook(bookId: string): Promise<Book> {
-  const response = await fetch(
-    `${API_BASE_URL}/books/${bookId}`,
-  );
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}`);
 
   if (!response.ok) {
     throw new Error("책 정보를 불러오지 못했습니다.");
@@ -35,22 +35,16 @@ export async function getBook(bookId: string): Promise<Book> {
   return response.json();
 }
 
-export async function saveBookProgress(
-  bookId: number,
-  currentPage: number,
-) {
-  const response = await fetch(
-    `${API_BASE_URL}/books/${bookId}/progress`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        current_page: currentPage,
-      }),
+export async function saveBookProgress(bookId: number, currentPage: number) {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/progress`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      current_page: currentPage,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("진행도를 저장하지 못했습니다.");
@@ -86,22 +80,16 @@ export async function createBook(formData: FormData) {
   };
 }
 
-export async function saveBookPosition(
-  bookId: number,
-  currentPage: number,
-) {
-  const response = await fetch(
-    `${API_BASE_URL}/books/${bookId}/position`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        current_page: currentPage,
-      }),
+export async function saveBookPosition(bookId: number, currentPage: number) {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/position`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      current_page: currentPage,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("마지막 위치를 저장하지 못했습니다.");
@@ -111,12 +99,9 @@ export async function saveBookPosition(
 }
 
 export async function deleteBook(bookId: number) {
-  const response = await fetch(
-    `${API_BASE_URL}/books/${bookId}`,
-    {
-      method: "DELETE",
-    },
-  );
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}`, {
+    method: "DELETE",
+  });
 
   if (!response.ok) {
     throw new Error("비급을 삭제하지 못했습니다.");
@@ -131,18 +116,17 @@ export async function updateBook(
     display_title: string;
     original_title: string | null;
     cover_style: string | null;
+    cover_color: string | null;
+    source_description: string | null;
   },
 ) {
-  const response = await fetch(
-    `${API_BASE_URL}/books/${bookId}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     throw new Error("비급 정보를 수정하지 못했습니다.");
@@ -158,27 +142,32 @@ export type TitleCandidate = {
   reason: string;
 };
 
+export type TitleGenerateResult = {
+  valid_input: boolean;
+  error_code: string | null;
+  titles: TitleCandidate[];
+};
+
 export async function generateTitles(
-  originalTitle: string,
-): Promise<TitleCandidate[]> {
-  const response = await fetch(
-    "http://127.0.0.1:8000/titles/generate",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        original_title: originalTitle,
-      }),
+  sourceText: string,
+  sourceType: "title" | "description",
+  forceGenerate = false,
+): Promise<TitleGenerateResult> {
+  const response = await fetch("http://127.0.0.1:8000/titles/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      source_text: sourceText,
+      source_type: sourceType,
+      force_generate: forceGenerate,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("서고지기의 작명에 실패했습니다.");
   }
 
-  const data = await response.json();
-
-  return data.titles;
+  return response.json();
 }
