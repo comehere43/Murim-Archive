@@ -69,9 +69,13 @@ export async function createBook(formData: FormData) {
   }
 
   if (!response.ok) {
-    throw new Error("책 등록에 실패했습니다.");
-  }
+    const data = await response.json();
 
+    const detail =
+      typeof data.detail === "string" ? data.detail : "책 등록에 실패했습니다.";
+
+    throw new Error(detail);
+  }
   const data = await response.json();
 
   return {
@@ -129,7 +133,11 @@ export async function updateBook(
   });
 
   if (!response.ok) {
-    throw new Error("비급 정보를 수정하지 못했습니다.");
+    const data = await response.json();
+
+    throw new Error(
+      JSON.stringify(data.detail ?? "비급 정보를 수정하지 못했습니다."),
+    );
   }
 
   return response.json();

@@ -165,7 +165,36 @@ function BookAddPage() {
       setIsSuccess(true);
     } catch (error) {
       console.error(error);
-      setMessage("비급 등록 중 문제가 발생했습니다.");
+
+      if (error instanceof Error) {
+        if (error.message === "Only PDF files are allowed") {
+          setMessage("PDF 파일만 등록할 수 있습니다.");
+        } else if (error.message === "PDF file is too large") {
+          setMessage("PDF 파일은 100MB 이하만 등록할 수 있습니다.");
+        } else if (error.message === "PDF file is empty") {
+          setMessage("비어 있는 PDF 파일은 등록할 수 없습니다.");
+        } else if (error.message === "Invalid PDF file") {
+          setMessage("정상적으로 열 수 없는 PDF 파일입니다.");
+        } else if (error.message === "PDF contains no pages") {
+          setMessage("페이지가 없는 PDF 파일은 등록할 수 없습니다.");
+        } else if (error.message === "Display title is required") {
+          setMessage("비급명을 입력해주세요.");
+        } else if (error.message === "Display title is too long") {
+          setMessage("비급명은 255자 이하로 입력해주세요.");
+        } else if (error.message === "Original title is too long") {
+          setMessage("원전 제목은 255자 이하로 입력해주세요.");
+        } else if (error.message === "Source description is too long") {
+          setMessage("내용 설명은 1000자 이하로 입력해주세요.");
+        } else if (error.message === "Invalid cover color") {
+          setMessage("올바른 표지 색상이 아닙니다.");
+        } else if (error.message === "Invalid title mode") {
+          setMessage("올바르지 않은 작명 방식입니다.");
+        } else {
+          setMessage("비급 등록 중 문제가 발생했습니다.");
+        }
+      } else {
+        setMessage("비급 등록 중 문제가 발생했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -421,7 +450,38 @@ function BookAddPage() {
                 }
               } catch (error) {
                 console.error(error);
-                setMessage("비급 등록 중 문제가 발생했습니다.");
+
+                if (error instanceof Error) {
+                  if (error.message === "Only PDF files are allowed") {
+                    setMessage("PDF 파일만 등록할 수 있습니다.");
+                  } else if (error.message === "PDF file is too large") {
+                    setMessage("PDF 파일은 100MB 이하만 등록할 수 있습니다.");
+                  } else if (error.message === "PDF file is empty") {
+                    setMessage("비어 있는 PDF 파일은 등록할 수 없습니다.");
+                  } else if (error.message === "Invalid PDF file") {
+                    setMessage("정상적으로 열 수 없는 PDF 파일입니다.");
+                  } else if (error.message === "PDF contains no pages") {
+                    setMessage("페이지가 없는 PDF 파일은 등록할 수 없습니다.");
+                  } else if (error.message === "Display title is required") {
+                    setMessage("비급명을 입력해주세요.");
+                  } else if (error.message === "Display title is too long") {
+                    setMessage("비급명은 255자 이하로 입력해주세요.");
+                  } else if (error.message === "Original title is too long") {
+                    setMessage("원전 제목은 255자 이하로 입력해주세요.");
+                  } else if (
+                    error.message === "Source description is too long"
+                  ) {
+                    setMessage("내용 설명은 1000자 이하로 입력해주세요.");
+                  } else if (error.message === "Invalid cover color") {
+                    setMessage("올바른 표지 색상이 아닙니다.");
+                  } else if (error.message === "Invalid title mode") {
+                    setMessage("올바르지 않은 작명 방식입니다.");
+                  } else {
+                    setMessage("비급 등록 중 문제가 발생했습니다.");
+                  }
+                } else {
+                  setMessage("비급 등록 중 문제가 발생했습니다.");
+                }
               } finally {
                 setIsSubmitting(false);
               }

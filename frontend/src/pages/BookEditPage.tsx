@@ -101,7 +101,22 @@ function BookEditPage() {
       navigate(`/books/${book.id}`);
     } catch (error) {
       console.error(error);
-      setMessage("비급 정보를 수정하지 못했습니다.");
+
+      if (error instanceof Error) {
+        if (error.message.includes("display_title")) {
+          setMessage("비급명을 확인해주세요.");
+        } else if (error.message.includes("original_title")) {
+          setMessage("원전 제목은 255자 이하로 입력해주세요.");
+        } else if (error.message.includes("source_description")) {
+          setMessage("내용 설명은 1000자 이하로 입력해주세요.");
+        } else if (error.message.includes("cover_color")) {
+          setMessage("올바른 표지 색상이 아닙니다.");
+        } else {
+          setMessage("비급 정보 수정 중 문제가 발생했습니다.");
+        }
+      } else {
+        setMessage("비급 정보 수정 중 문제가 발생했습니다.");
+      }
     } finally {
       setIsSaving(false);
     }
