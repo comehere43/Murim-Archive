@@ -1,9 +1,11 @@
 import hashlib
+import re
 
+from importlib.resources import contents
 from pathlib import Path
 from uuid import uuid4
 
-import fitz
+import pymupdf
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
@@ -19,6 +21,8 @@ router = APIRouter(
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+MAX_FILE_SIZE = 100 * 1024 * 1024
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 @router.post("")
@@ -33,7 +37,71 @@ async def create_book(
     db: Session = Depends(get_db),
     force_duplicate: bool = Form(False),
 ):
+
+    if title_mode not in {"manual", "ai"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid title mode",
+        )
+
+    display_title = display_title.strip()
+
+    if not display_title:
+        raise HTTPException(
+            status_code=400,
+            detail="Display title is required",
+        )
+
+    if len(display_title) > 255:
+        raise HTTPException(
+            status_code=400,
+            detail="Display title is too long",
+        )
+
+    if original_title is not None:
+        original_title = original_title.strip() or None
+
+        if original_title is not None and len(original_title) > 255:
+            raise HTTPException(
+                status_code=400,
+                detail="Original title is too long",
+            )
+
+    if source_description is not None:
+        source_description = source_description.strip() or None
+
+        if source_description is not None and len(source_description) > 1000:
+            raise HTTPException(
+                status_code=400,
+                detail="Source description is too long",
+            )
+
+    if cover_color is not None:
+        if not HEX_COLOR_PATTERN.fullmatch(cover_color):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid cover color",
+            )
+
     contents = await file.read()
+
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed",
+        )
+
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail="PDF file is too large",
+        )
+
+    if len(contents) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF file is empty",
+        )
 
     file_hash = hashlib.sha256(contents).hexdigest()
 
@@ -52,9 +120,26 @@ async def create_book(
             },
         )
 
-    pdf = fitz.open(stream=contents, filetype="pdf")
-    total_pages = pdf.page_count
-    pdf.close()
+    try:
+        pdf = pymupdf.open(
+            stream=contents,
+            filetype="pdf",
+        )
+
+        total_pages = pdf.page_count
+        pdf.close()
+
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid PDF file",
+        )
+
+    if total_pages < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF contains no pages",
+        )
 
     file_extension = Path(file.filename or "").suffix or ".pdf"
     stored_filename = f"{uuid4()}{file_extension}"
@@ -243,6 +328,7 @@ def update_book(
     book.original_title = update.original_title
     book.source_description = update.source_description
     book.cover_style = update.cover_style
+    book.cover_color = update.cover_color
 
     db.commit()
     db.refresh(book)
