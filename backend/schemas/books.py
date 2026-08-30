@@ -34,3 +34,35 @@ class BookUpdate(BaseModel):
         default=None,
         pattern=r"^#[0-9A-Fa-f]{6}$",
     )
+
+
+class BookResponse(BaseModel):
+    id: int
+    display_title: str
+    original_title: str | None = None
+    source_description: str | None = None
+    original_filename: str
+    file_path: str | None = None
+    title_mode: str
+    total_pages: int
+    current_page: int
+    max_read_page: int
+    cover_style: str | None = None
+    cover_color: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ProgressResponse(BaseModel):
+    id: int
+    max_read_page: int
+
+
+class PositionResponse(BaseModel):
+    id: int
+    current_page: int
+
+
+class DeleteBookResponse(BaseModel):
+    message: str
+    id: int

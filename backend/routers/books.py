@@ -1,7 +1,7 @@
 import hashlib
 import re
 
-from importlib.resources import contents
+
 from pathlib import Path
 from uuid import uuid4
 
@@ -10,8 +10,17 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from database import get_db
+from config import UPLOAD_DIR
 from models import Book
-from schemas.books import PositionUpdate, ProgressUpdate, BookUpdate
+from schemas.books import (
+    PositionUpdate,
+    ProgressUpdate,
+    BookUpdate,
+    BookResponse,
+    ProgressResponse,
+    PositionResponse,
+    DeleteBookResponse,
+)
 
 router = APIRouter(
     prefix="/books",
@@ -19,13 +28,14 @@ router = APIRouter(
 )
 
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
 MAX_FILE_SIZE = 100 * 1024 * 1024
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
-@router.post("")
+@router.post(
+    "",
+    response_model=BookResponse,
+)
 async def create_book(
     file: UploadFile = File(...),
     display_title: str = Form(...),
@@ -83,7 +93,7 @@ async def create_book(
                 detail="Invalid cover color",
             )
 
-    contents = await file.read()
+    contents = await file.read(MAX_FILE_SIZE + 1)
 
     if file.content_type != "application/pdf":
         raise HTTPException(
@@ -121,13 +131,11 @@ async def create_book(
         )
 
     try:
-        pdf = pymupdf.open(
+        with pymupdf.open(
             stream=contents,
             filetype="pdf",
-        )
-
-        total_pages = pdf.page_count
-        pdf.close()
+        ) as pdf:
+            total_pages = pdf.page_count
 
     except Exception:
         raise HTTPException(
@@ -141,11 +149,8 @@ async def create_book(
             detail="PDF contains no pages",
         )
 
-    file_extension = Path(file.filename or "").suffix or ".pdf"
-    stored_filename = f"{uuid4()}{file_extension}"
+    stored_filename = f"{uuid4()}.pdf"
     file_path = UPLOAD_DIR / stored_filename
-
-    file_path.write_bytes(contents)
 
     book = Book(
         original_title=original_title,
@@ -162,51 +167,43 @@ async def create_book(
         cover_color=cover_color,
     )
 
-    db.add(book)
-    db.commit()
-    db.refresh(book)
+    try:
+        file_path.write_bytes(contents)
 
-    return {
-        "id": book.id,
-        "display_title": book.display_title,
-        "original_title": book.original_title,
-        "original_filename": book.original_filename,
-        "title_mode": book.title_mode,
-        "source_description": book.source_description,
-        "total_pages": book.total_pages,
-        "current_page": book.current_page,
-        "max_read_page": book.max_read_page,
-        "cover_style": book.cover_style,
-        "cover_color": book.cover_color,
-    }
+        db.add(book)
+        db.commit()
+        db.refresh(book)
+
+    except Exception:
+        db.rollback()
+
+        if file_path.exists():
+            file_path.unlink()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save book",
+        )
+
+    return book
 
 
-@router.get("")
+@router.get(
+    "",
+    response_model=list[BookResponse],
+)
 def get_books(
     db: Session = Depends(get_db),
 ):
     books = db.query(Book).order_by(Book.created_at.desc()).all()
 
-    return [
-        {
-            "id": book.id,
-            "display_title": book.display_title,
-            "original_title": book.original_title,
-            "original_filename": book.original_filename,
-            "file_path": book.file_path,
-            "title_mode": book.title_mode,
-            "source_description": book.source_description,
-            "total_pages": book.total_pages,
-            "current_page": book.current_page,
-            "max_read_page": book.max_read_page,
-            "cover_style": book.cover_style,
-            "cover_color": book.cover_color,
-        }
-        for book in books
-    ]
+    return books
 
 
-@router.get("/{book_id}")
+@router.get(
+    "/{book_id}",
+    response_model=BookResponse,
+)
 def get_book(
     book_id: int,
     db: Session = Depends(get_db),
@@ -219,23 +216,13 @@ def get_book(
             detail="Book not found",
         )
 
-    return {
-        "id": book.id,
-        "display_title": book.display_title,
-        "original_title": book.original_title,
-        "source_description": book.source_description,
-        "original_filename": book.original_filename,
-        "file_path": book.file_path,
-        "title_mode": book.title_mode,
-        "total_pages": book.total_pages,
-        "current_page": book.current_page,
-        "max_read_page": book.max_read_page,
-        "cover_style": book.cover_style,
-        "cover_color": book.cover_color,
-    }
+    return book
 
 
-@router.patch("/{book_id}/progress")
+@router.patch(
+    "/{book_id}/progress",
+    response_model=ProgressResponse,
+)
 def update_book_progress(
     book_id: int,
     progress: ProgressUpdate,
@@ -264,8 +251,17 @@ def update_book_progress(
     if progress.current_page > book.max_read_page:
         book.max_read_page = progress.current_page
 
-    db.commit()
-    db.refresh(book)
+    try:
+        db.commit()
+        db.refresh(book)
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save reading progress",
+        )
 
     return {
         "id": book.id,
@@ -273,7 +269,10 @@ def update_book_progress(
     }
 
 
-@router.patch("/{book_id}/position")
+@router.patch(
+    "/{book_id}/position",
+    response_model=PositionResponse,
+)
 def update_book_position(
     book_id: int,
     position: PositionUpdate,
@@ -301,8 +300,17 @@ def update_book_position(
 
     book.current_page = position.current_page
 
-    db.commit()
-    db.refresh(book)
+    try:
+        db.commit()
+        db.refresh(book)
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save reading position",
+        )
 
     return {
         "id": book.id,
@@ -310,7 +318,10 @@ def update_book_position(
     }
 
 
-@router.patch("/{book_id}")
+@router.patch(
+    "/{book_id}",
+    response_model=BookResponse,
+)
 def update_book(
     book_id: int,
     update: BookUpdate,
@@ -330,25 +341,25 @@ def update_book(
     book.cover_style = update.cover_style
     book.cover_color = update.cover_color
 
-    db.commit()
-    db.refresh(book)
+    try:
+        db.commit()
+        db.refresh(book)
 
-    return {
-        "id": book.id,
-        "display_title": book.display_title,
-        "original_title": book.original_title,
-        "source_description": book.source_description,
-        "original_filename": book.original_filename,
-        "title_mode": book.title_mode,
-        "total_pages": book.total_pages,
-        "current_page": book.current_page,
-        "max_read_page": book.max_read_page,
-        "cover_style": book.cover_style,
-        "cover_color": book.cover_color,
-    }
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update book",
+        )
+
+    return book
 
 
-@router.delete("/{book_id}")
+@router.delete(
+    "/{book_id}",
+    response_model=DeleteBookResponse,
+)
 def delete_book(
     book_id: int,
     db: Session = Depends(get_db),
@@ -363,11 +374,20 @@ def delete_book(
 
     file_path = Path(book.file_path)
 
-    db.delete(book)
-    db.commit()
+    try:
+        if file_path.exists():
+            file_path.unlink()
 
-    if file_path.exists():
-        file_path.unlink()
+        db.delete(book)
+        db.commit()
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete book",
+        )
 
     return {
         "message": "Book deleted successfully",
