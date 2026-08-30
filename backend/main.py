@@ -1,4 +1,4 @@
-from pathlib import Path
+from config import UPLOAD_DIR
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from routers.books import router as books_router
 from routers.titles import router as titles_router
+from routers.profile import router as profile_router
 
 app = FastAPI()
 
@@ -19,18 +20,16 @@ app.add_middleware(
 )
 
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-
 app.mount(
     "/uploads",
-    StaticFiles(directory=UPLOAD_DIR),
+    StaticFiles(directory=str(UPLOAD_DIR)),
     name="uploads",
 )
 
 
 app.include_router(books_router)
 app.include_router(titles_router)
+app.include_router(profile_router)
 
 
 @app.get("/")

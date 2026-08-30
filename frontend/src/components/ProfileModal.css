@@ -1,0 +1,68 @@
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.profile-modal {
+  position: relative;
+
+  width: min(760px, calc(100vw - 80px));
+  min-height: 520px;
+  padding: 48px;
+
+  background: #eee5cf;
+  border: 1px solid #64533f;
+  border-radius: 12px;
+
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.profile-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+
+  border: none;
+  background: transparent;
+
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.profile-info p {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.profile-info hr {
+  margin: 20px 0;
+}
+
+.realm-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.realm-progress-bar {
+  flex: 1;
+  height: 10px;
+
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+}
+
+.realm-progress-fill {
+  height: 100%;
+  background: #665239;
+}

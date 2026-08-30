@@ -150,7 +150,9 @@ async def create_book(
         )
 
     stored_filename = f"{uuid4()}.pdf"
-    file_path = UPLOAD_DIR / stored_filename
+
+    storage_path = UPLOAD_DIR / stored_filename
+    file_path = f"uploads/{stored_filename}"
 
     book = Book(
         original_title=original_title,
@@ -158,7 +160,7 @@ async def create_book(
         display_title=display_title,
         title_mode=title_mode,
         original_filename=file.filename or stored_filename,
-        file_path=str(file_path),
+        file_path=file_path,
         file_hash=file_hash,
         total_pages=total_pages,
         current_page=1,
@@ -168,7 +170,7 @@ async def create_book(
     )
 
     try:
-        file_path.write_bytes(contents)
+        storage_path.write_bytes(contents)
 
         db.add(book)
         db.commit()
@@ -177,8 +179,8 @@ async def create_book(
     except Exception:
         db.rollback()
 
-        if file_path.exists():
-            file_path.unlink()
+        if storage_path.exists():
+            storage_path.unlink()
 
         raise HTTPException(
             status_code=500,
@@ -372,7 +374,7 @@ def delete_book(
             detail="Book not found",
         )
 
-    file_path = Path(book.file_path)
+    file_path = UPLOAD_DIR / Path(book.file_path).name
 
     try:
         if file_path.exists():

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, Integer, String, Column
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -88,4 +88,28 @@ class Book(Base):
         default=datetime.now,
         onupdate=datetime.now,
         nullable=False,
+    )
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(
+        String(100),
+        nullable=False,
+        default="무명",
+    )
+
+    sect = Column(
+        String(100),
+        nullable=False,
+        default="무소속",
+    )
+
+    position = Column(
+        String(100),
+        nullable=False,
+        default="무직책",
     )
