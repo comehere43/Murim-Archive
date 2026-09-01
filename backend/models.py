@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Column
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -112,4 +120,94 @@ class Profile(Base):
         String(100),
         nullable=False,
         default="무직책",
+    )
+
+
+class ProfileTitle(Base):
+    __tablename__ = "profile_titles"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id",
+            "title_key",
+            name="uq_profile_title",
+        ),
+    )
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    profile_id = Column(
+        Integer,
+        ForeignKey("profiles.id"),
+        nullable=False,
+        index=True,
+    )
+
+    title_key = Column(
+        String(100),
+        nullable=False,
+    )
+
+    acquired_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    is_seen = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    is_equipped = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+
+class ProfileRealmEvent(Base):
+    __tablename__ = "profile_realm_events"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id",
+            "realm_key",
+            name="uq_profile_realm_event",
+        ),
+    )
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    profile_id = Column(
+        Integer,
+        ForeignKey("profiles.id"),
+        nullable=False,
+        index=True,
+    )
+
+    realm_key = Column(
+        String(100),
+        nullable=False,
+    )
+
+    acquired_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    is_seen = Column(
+        Boolean,
+        nullable=False,
+        default=False,
     )

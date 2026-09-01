@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class ProfileUpdate(BaseModel):
@@ -14,3 +15,18 @@ class ProfileResponse(BaseModel):
     position: str
 
     model_config = {"from_attributes": True}
+
+
+class ProfileTitleResponse(BaseModel):
+    id: int
+    title_key: str
+    acquired_at: datetime
+    is_seen: bool
+    is_equipped: bool
+
+    model_config = {"from_attributes": True}
+
+
+class EquipTitleResponse(BaseModel):
+    title_key: str
+    is_equipped: bool
