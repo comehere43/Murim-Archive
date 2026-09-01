@@ -30,3 +30,28 @@ class ProfileTitleResponse(BaseModel):
 class EquipTitleResponse(BaseModel):
     title_key: str
     is_equipped: bool
+
+
+class ProfileRealmEventResponse(BaseModel):
+    id: int
+    realm_key: str
+    realm_name: str
+    acquired_at: datetime
+    is_seen: bool
+
+
+class ProfileRealmResponse(BaseModel):
+    realm_key: str
+    realm: str
+    next_realm_key: str | None
+    next_realm: str | None
+    progress: int
+    total_read_pages: int
+
+
+class BookCompletionEventResponse(BaseModel):
+    id: int
+    book_id: int
+    book_title: str
+    acquired_at: datetime
+    is_seen: bool

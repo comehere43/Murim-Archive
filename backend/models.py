@@ -211,3 +211,46 @@ class ProfileRealmEvent(Base):
         nullable=False,
         default=False,
     )
+
+
+class BookCompletionEvent(Base):
+    __tablename__ = "book_completion_events"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "book_id",
+            name="uq_book_completion_event_book",
+        ),
+    )
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    profile_id = Column(
+        Integer,
+        ForeignKey("profiles.id"),
+        nullable=False,
+        index=True,
+    )
+
+    book_id = Column(
+        Integer,
+        ForeignKey("books.id"),
+        nullable=False,
+        index=True,
+    )
+
+    acquired_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    is_seen = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )

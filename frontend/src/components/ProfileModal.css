@@ -66,3 +66,36 @@
   height: 100%;
   background: #665239;
 }
+
+.profile-title-list {
+  margin-top: 12px;
+}
+
+.profile-title-item {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(100, 83, 63, 0.3);
+}
+
+.profile-title-item:last-child {
+  border-bottom: none;
+}
+
+.profile-title-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-title-item p {
+  margin: 8px 0;
+}
+
+.profile-title-item small {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.profile-title-item button {
+  cursor: pointer;
+}

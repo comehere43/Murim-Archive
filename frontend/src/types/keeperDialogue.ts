@@ -1,4 +1,8 @@
-export type KeeperEventType = "normal" | "title" | "realm_up";
+export type KeeperEventType =
+  | "normal"
+  | "title"
+  | "realm_up"
+  | "book_completed";
 
 export type KeeperExpression = "normal" | "happy" | "surprised";
 

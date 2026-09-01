@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBooks, type Book } from "../api/books";
-import { getUserRealm } from "../utils/userRealm";
+import { getProfileRealm, type ProfileRealm } from "../api/realm";
 import { getProfile, updateProfile, type Profile } from "../api/profile";
 import {
   equipProfileTitle,
@@ -24,19 +24,23 @@ function ProfileModal({ onClose }: ProfileModalProps) {
   const [positionInput, setPositionInput] = useState("");
   const [titles, setTitles] = useState<ProfileTitle[]>([]);
   const [isTitleListOpen, setIsTitleListOpen] = useState(false);
+  const [realmInfo, setRealmInfo] = useState<ProfileRealm | null>(null);
 
   useEffect(() => {
     async function loadProfileData() {
       try {
-        const [booksData, profileData, titlesData] = await Promise.all([
-          getBooks(),
-          getProfile(),
-          getProfileTitles(),
-        ]);
+        const [booksData, profileData, titlesData, realmData] =
+          await Promise.all([
+            getBooks(),
+            getProfile(),
+            getProfileTitles(),
+            getProfileRealm(),
+          ]);
 
         setBooks(booksData);
         setProfile(profileData);
         setTitles(titlesData);
+        setRealmInfo(realmData);
         setNameInput(profileData.name);
         setSectInput(profileData.sect);
         setPositionInput(profileData.position);
@@ -56,11 +60,7 @@ function ProfileModal({ onClose }: ProfileModalProps) {
     (book) => book.max_read_page >= book.total_pages,
   ).length;
 
-  const totalReadPages = books.reduce(
-    (sum, book) => sum + book.max_read_page,
-    0,
-  );
-  const realmInfo = getUserRealm(totalReadPages);
+  const totalReadPages = realmInfo?.total_read_pages ?? 0;
   const equippedTitle = titles.find((title) => title.is_equipped);
 
   async function handleProfileSave() {
@@ -103,6 +103,16 @@ function ProfileModal({ onClose }: ProfileModalProps) {
 
   function getTitleName(titleKey: string) {
     return TITLE_DEFINITIONS[titleKey]?.name ?? titleKey;
+  }
+
+  function formatTitleDate(acquiredAt: string) {
+    const date = new Date(acquiredAt);
+
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
   }
 
   async function handleEquipTitle(titleKey: string) {
@@ -231,24 +241,42 @@ function ProfileModal({ onClose }: ProfileModalProps) {
               {titles.length === 0 ? (
                 <p>아직 획득한 칭호가 없습니다.</p>
               ) : (
-                titles.map((title) => (
-                  <button
-                    key={title.id}
-                    type="button"
-                    onClick={() => handleEquipTitle(title.title_key)}
-                    disabled={title.is_equipped}
-                  >
-                    {getTitleName(title.title_key)}
-                    {title.is_equipped && " · 대표 칭호"}
-                  </button>
-                ))
+                titles.map((title) => {
+                  const definition = TITLE_DEFINITIONS[title.title_key];
+
+                  return (
+                    <div key={title.id} className="profile-title-item">
+                      <div className="profile-title-item-header">
+                        <strong>{getTitleName(title.title_key)}</strong>
+
+                        {title.is_equipped && <span>대표 칭호</span>}
+                      </div>
+
+                      <p>
+                        {definition?.description ??
+                          "이 칭호에 대한 설명이 없습니다."}
+                      </p>
+
+                      <small>획득: {formatTitleDate(title.acquired_at)}</small>
+
+                      {!title.is_equipped && (
+                        <button
+                          type="button"
+                          onClick={() => handleEquipTitle(title.title_key)}
+                        >
+                          대표 칭호로 설정
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           )}
 
           <p>
             <strong>경지</strong>
-            <span>{isLoading ? "..." : realmInfo.realm}</span>
+            <span>{isLoading ? "..." : (realmInfo?.realm ?? "삼류")}</span>
           </p>
 
           <div className="realm-progress">
@@ -256,18 +284,18 @@ function ProfileModal({ onClose }: ProfileModalProps) {
               <div
                 className="realm-progress-fill"
                 style={{
-                  width: `${isLoading ? 0 : realmInfo.progress}%`,
+                  width: `${isLoading ? 0 : (realmInfo?.progress ?? 0)}%`,
                 }}
               />
             </div>
 
-            <span>{isLoading ? "..." : `${realmInfo.progress}%`}</span>
+            <span>{isLoading ? "..." : `${realmInfo?.progress ?? 0}%`}</span>
           </div>
 
           <p>
             <strong>다음 경지</strong>
             <span>
-              {isLoading ? "..." : (realmInfo.nextRealm ?? "최고 경지")}
+              {isLoading ? "..." : (realmInfo?.next_realm ?? "최고 경지")}
             </span>
           </p>
 

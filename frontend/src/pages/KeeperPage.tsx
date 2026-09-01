@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import ProfileModal from "../components/ProfileModal";
 import KeeperDialogueBox from "../components/KeeperDialogueBox";
@@ -13,36 +13,58 @@ import {
 } from "../api/titles";
 
 import {
-  CONTINUATION_TITLE_EVENT_LINES,
-  getFirstTitleEventLine,
-  getTitleAcquiredLine,
-  TITLE_DEFINITIONS,
-} from "../utils/titleDefinitions";
+  getUnseenRealmEvents,
+  markRealmEventAsSeen,
+  type ProfileRealmEvent,
+} from "../api/realms";
 
 import type { KeeperDialogue } from "../types/keeperDialogue";
+
+import {
+  createBookCompletionDialogues,
+  createKeeperEventQueue,
+  createRealmDialogues,
+  createTitleDialogues,
+} from "../utils/keeperEvents";
+
+import {
+  getUnseenBookCompletionEvents,
+  markBookCompletionEventAsSeen,
+  type BookCompletionEvent,
+} from "../api/completions";
 
 function KeeperPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [unseenTitles, setUnseenTitles] = useState<ProfileTitle[]>([]);
+  const [unseenRealms, setUnseenRealms] = useState<ProfileRealmEvent[]>([]);
+  const [unseenCompletions, setUnseenCompletions] = useState<
+    BookCompletionEvent[]
+  >([]);
 
-  // 현재 몇 번째 칭호 이벤트인지
-  const [currentTitleEventIndex, setCurrentTitleEventIndex] = useState(0);
-
-  // 현재 칭호 이벤트 안에서 몇 번째 대사를 보고 있는지
+  const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [currentDialogueIndex, setCurrentDialogueIndex] = useState(0);
 
   useEffect(() => {
     async function loadKeeperData() {
       try {
-        const [profileData, unseenTitleData] = await Promise.all([
+        const [
+          profileData,
+          unseenTitleData,
+          unseenRealmData,
+          unseenCompletionData,
+        ] = await Promise.all([
           getProfile(),
           getUnseenProfileTitles(),
+          getUnseenRealmEvents(),
+          getUnseenBookCompletionEvents(),
         ]);
 
         setProfile(profileData);
         setUnseenTitles(unseenTitleData);
+        setUnseenRealms(unseenRealmData);
+        setUnseenCompletions(unseenCompletionData);
       } catch (error) {
         console.error("서고지기 정보를 불러오지 못했습니다.", error);
       }
@@ -51,7 +73,12 @@ function KeeperPage() {
     loadKeeperData();
   }, []);
 
-  const currentTitleEvent = unseenTitles[currentTitleEventIndex];
+  const keeperEvents = useMemo(
+    () => createKeeperEventQueue(unseenTitles, unseenRealms, unseenCompletions),
+    [unseenTitles, unseenRealms, unseenCompletions],
+  );
+
+  const currentEvent = keeperEvents[currentEventIndex];
 
   const position = profile?.position ?? "주인";
 
@@ -65,78 +92,61 @@ function KeeperPage() {
     expression: "normal",
   };
 
-  const titleDialogues: KeeperDialogue[] = currentTitleEvent
-    ? [
-        {
-          id: `${currentTitleEvent.title_key}-opening`,
-          eventType: "title",
-          speaker: "서고지기",
-          text:
-            currentTitleEventIndex === 0
-              ? getFirstTitleEventLine(position)
-              : CONTINUATION_TITLE_EVENT_LINES[
-                  (currentTitleEventIndex - 1) %
-                    CONTINUATION_TITLE_EVENT_LINES.length
-                ],
-          expression: "surprised",
-        },
-
-        {
-          id: `${currentTitleEvent.title_key}-rumor`,
-          eventType: "title",
-          speaker: "서고지기",
-          text:
-            TITLE_DEFINITIONS[currentTitleEvent.title_key]?.rumor(position) ??
-            "강호에 새로운 이야기가 퍼지고 있다 하옵니다.",
-          expression: "normal",
-        },
-
-        {
-          id: `${currentTitleEvent.title_key}-acquired`,
-          eventType: "title",
-          speaker: "서고지기",
-          text: getTitleAcquiredLine(currentTitleEvent.title_key, position),
-          expression: "happy",
-        },
-      ]
+  const eventDialogues: KeeperDialogue[] = currentEvent
+    ? currentEvent.type === "title"
+      ? createTitleDialogues(currentEvent.data, position, currentEventIndex)
+      : currentEvent.type === "realm_up"
+        ? createRealmDialogues(
+            currentEvent.data,
+            position,
+            currentEventIndex,
+            keeperEvents,
+          )
+        : createBookCompletionDialogues(
+            currentEvent.data,
+            position,
+            currentEventIndex,
+            keeperEvents,
+          )
     : [];
 
   const activeDialogue =
-    currentTitleEvent && titleDialogues.length > 0
-      ? titleDialogues[currentDialogueIndex]
+    currentEvent && eventDialogues.length > 0
+      ? eventDialogues[currentDialogueIndex]
       : normalDialogue;
 
   async function handleDialogueNext() {
-    if (!currentTitleEvent) {
+    if (!currentEvent) {
       return;
     }
 
-    // 아직 현재 칭호의 다음 대사가 남아 있는 경우
-    if (currentDialogueIndex < titleDialogues.length - 1) {
+    if (currentDialogueIndex < eventDialogues.length - 1) {
       setCurrentDialogueIndex((current) => current + 1);
       return;
     }
 
-    // 현재 칭호의 마지막 대사까지 본 경우
     try {
-      await markProfileTitleAsSeen(currentTitleEvent.title_key);
+      if (currentEvent.type === "title") {
+        await markProfileTitleAsSeen(currentEvent.data.title_key);
+      } else if (currentEvent.type === "realm_up") {
+        await markRealmEventAsSeen(currentEvent.data.realm_key);
+      } else {
+        await markBookCompletionEventAsSeen(currentEvent.data.book_id);
+      }
 
-      // 다음 칭호로 이동
-      setCurrentTitleEventIndex((current) => current + 1);
-
-      // 다음 칭호는 다시 첫 대사부터
+      setCurrentEventIndex((current) => current + 1);
       setCurrentDialogueIndex(0);
     } catch (error) {
       console.error(error);
-      alert("칭호 확인 처리에 실패했습니다.");
+      alert("이벤트 확인 처리에 실패했습니다.");
     }
   }
 
   const dialogueButtonLabel =
-    currentDialogueIndex < titleDialogues.length - 1
+    currentDialogueIndex < eventDialogues.length - 1
       ? "다음"
-      : currentTitleEventIndex < unseenTitles.length - 1
-        ? "다음 소문"
+      : currentEventIndex < keeperEvents.length - 1
+        ? "다음 소식"
         : "확인";
 
   return (
@@ -145,7 +155,7 @@ function KeeperPage() {
 
       <KeeperDialogueBox
         dialogue={activeDialogue}
-        onNext={currentTitleEvent ? handleDialogueNext : undefined}
+        onNext={currentEvent ? handleDialogueNext : undefined}
         nextLabel={dialogueButtonLabel}
       />
 
