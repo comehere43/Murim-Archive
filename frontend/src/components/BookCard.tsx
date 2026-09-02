@@ -6,7 +6,7 @@ type BookCardProps = {
   displayTitle: string;
   originalTitle: string | null;
   originalFilename: string;
-  maxReadPage: number;
+  progressPage: number;
   totalPages: number;
   coverStyle: string | null;
   coverColor: string | null;
@@ -17,7 +17,7 @@ function BookCard({
   displayTitle,
   originalTitle,
   originalFilename,
-  maxReadPage,
+  progressPage,
   totalPages,
   coverStyle,
   coverColor,
@@ -25,9 +25,9 @@ function BookCard({
   const navigate = useNavigate();
 
   const progress =
-    totalPages > 0 ? Math.round((maxReadPage / totalPages) * 100) : 0;
+    totalPages > 0 ? Math.round((progressPage / totalPages) * 100) : 0;
 
-  const realm = getBookRealm(maxReadPage, totalPages);
+  const realm = getBookRealm(progressPage, totalPages);
 
   return (
     <article className="book-card" onClick={() => navigate(`/books/${id}`)}>
@@ -44,7 +44,7 @@ function BookCard({
 
       <div className="book-info">
         <p>
-          {maxReadPage} / {totalPages} 페이지
+          {progressPage} / {totalPages} 페이지
         </p>
 
         <p>진행률 {progress}%</p>

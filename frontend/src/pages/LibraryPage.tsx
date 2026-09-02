@@ -57,15 +57,15 @@ function LibraryPage() {
     }
 
     if (sortOption === "progress-desc") {
-      const aProgress = a.max_read_page / a.total_pages;
-      const bProgress = b.max_read_page / b.total_pages;
+      const aProgress = a.progress_page / a.total_pages;
+      const bProgress = b.progress_page / b.total_pages;
 
       return bProgress - aProgress;
     }
 
     if (sortOption === "progress-asc") {
-      const aProgress = a.max_read_page / a.total_pages;
-      const bProgress = b.max_read_page / b.total_pages;
+      const aProgress = a.progress_page / a.total_pages;
+      const bProgress = b.progress_page / b.total_pages;
 
       return aProgress - bProgress;
     }
@@ -122,7 +122,7 @@ function LibraryPage() {
                 displayTitle={book.display_title}
                 originalTitle={book.original_title}
                 originalFilename={book.original_filename}
-                maxReadPage={book.max_read_page}
+                progressPage={book.progress_page}
                 totalPages={book.total_pages}
                 coverStyle={book.cover_style}
                 coverColor={book.cover_color}

@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "dimibang";
+  src: url("/fonts/dimibang-web.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -11,8 +18,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: "dimibang", serif;
+  --heading: "dimibang", serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -63,13 +70,13 @@
 }
 
 body {
-  margin: 0;
+  margin: 0; font-family: "dimibang", serif;
 }
 
 h1,
 h2 {
-  font-family: var(--heading);
-  font-weight: 500;
+  font-family: "dimibang", serif;
+  font-weight: 700;
   color: var(--text-h);
 }
 
@@ -144,4 +151,51 @@ code {
   grid-template-columns: repeat(3, 220px);
   gap: 24px;
   justify-content: center;  
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.progress-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.progress-modal {
+  width: min(460px, 100%);
+  padding: 28px;
+
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  text-align: left;
+}
+
+.progress-modal h2 {
+  margin-top: 0;
+}
+
+.progress-modal p {
+  margin: 12px 0;
+}
+
+.progress-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  margin-top: 24px;
 }

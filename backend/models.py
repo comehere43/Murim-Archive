@@ -75,6 +75,13 @@ class Book(Base):
         nullable=False,
     )
 
+    progress_page: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        server_default="1",
+        nullable=False,
+    )
+
     cover_style: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,

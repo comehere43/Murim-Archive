@@ -9,6 +9,10 @@ class PositionUpdate(BaseModel):
     current_page: int
 
 
+class ProgressPageUpdate(BaseModel):
+    progress_page: int
+
+
 class BookUpdate(BaseModel):
     display_title: str = Field(
         min_length=1,
@@ -47,6 +51,7 @@ class BookResponse(BaseModel):
     total_pages: int
     current_page: int
     max_read_page: int
+    progress_page: int
     cover_style: str | None = None
     cover_color: str | None = None
 
@@ -61,6 +66,11 @@ class ProgressResponse(BaseModel):
 class PositionResponse(BaseModel):
     id: int
     current_page: int
+
+
+class ProgressPageResponse(BaseModel):
+    id: int
+    progress_page: int
 
 
 class DeleteBookResponse(BaseModel):

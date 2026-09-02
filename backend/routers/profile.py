@@ -61,10 +61,10 @@ def check_and_award_titles(
     total_books = db.query(Book).count()
 
     completed_books = (
-        db.query(Book).filter(Book.max_read_page >= Book.total_pages).count()
+        db.query(Book).filter(Book.progress_page >= Book.total_pages).count()
     )
 
-    total_read_pages = sum(book.max_read_page for book in db.query(Book).all())
+    total_read_pages = sum(book.progress_page for book in db.query(Book).all())
 
     title_conditions = [
         {
@@ -134,7 +134,7 @@ def check_and_award_realm_events(
     db: Session,
     profile: Profile,
 ):
-    total_read_pages = sum(book.max_read_page for book in db.query(Book).all())
+    total_read_pages = sum(book.progress_page for book in db.query(Book).all())
 
     existing_realm_keys = {
         event.realm_key
@@ -176,7 +176,7 @@ def check_and_award_realm_events(
 
 
 def calculate_realm_info(db: Session):
-    total_read_pages = sum(book.max_read_page for book in db.query(Book).all())
+    total_read_pages = sum(book.progress_page for book in db.query(Book).all())
 
     current_index = 0
 
@@ -242,7 +242,7 @@ def check_and_award_book_completion_events(
     profile: Profile,
 ):
     completed_books = (
-        db.query(Book).filter(Book.max_read_page >= Book.total_pages).all()
+        db.query(Book).filter(Book.progress_page >= Book.total_pages).all()
     )
 
     existing_book_ids = {

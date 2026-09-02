@@ -1,7 +1,7 @@
 import { useEffect, useState, type SyntheticEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { getBook, updateBook, type Book } from "../api/books";
+import { getBook, saveBookProgress, updateBook, type Book } from "../api/books";
 
 const COVER_PRESETS = [
   { key: "navy", name: "청람", color: "#243B6B" },
@@ -31,9 +31,15 @@ function BookEditPage() {
   const [coverStyle, setCoverStyle] = useState("");
   const [coverColor, setCoverColor] = useState("#243B6B");
 
+  // 실제 진행률 계산에 사용되는 페이지
+  const [progressPageInput, setProgressPageInput] = useState("");
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProgressSaving, setIsProgressSaving] = useState(false);
+
   const [message, setMessage] = useState("");
+  const [progressMessage, setProgressMessage] = useState("");
 
   useEffect(() => {
     async function fetchBook() {
@@ -45,11 +51,15 @@ function BookEditPage() {
         const data = await getBook(bookId);
 
         setBook(data);
+
         setDisplayTitle(data.display_title);
         setOriginalTitle(data.original_title ?? "");
         setSourceDescription(data.source_description ?? "");
         setCoverStyle(data.cover_style ?? "");
         setCoverColor(data.cover_color ?? "#243B6B");
+
+        // 서버에 저장된 현재 수련 진도
+        setProgressPageInput(String(data.progress_page));
 
         if (data.source_description) {
           setSourceType("description");
@@ -122,6 +132,53 @@ function BookEditPage() {
     }
   }
 
+  async function handleProgressSave() {
+    if (!book) {
+      return;
+    }
+
+    const targetPage = Number(progressPageInput);
+
+    if (!Number.isInteger(targetPage)) {
+      setProgressMessage("수련 진도는 페이지 번호로 입력해주세요.");
+      return;
+    }
+
+    if (targetPage < 1 || targetPage > book.total_pages) {
+      setProgressMessage(`1쪽부터 ${book.total_pages}쪽 사이로 입력해주세요.`);
+      return;
+    }
+
+    try {
+      setIsProgressSaving(true);
+      setProgressMessage("");
+
+      const result = await saveBookProgress(book.id, targetPage);
+
+      setBook((currentBook) => {
+        if (!currentBook) {
+          return currentBook;
+        }
+
+        return {
+          ...currentBook,
+          progress_page: result.progress_page,
+        };
+      });
+
+      setProgressPageInput(String(result.progress_page));
+
+      setProgressMessage(
+        `${result.progress_page}쪽까지 수련한 것으로 기록했습니다.`,
+      );
+    } catch (error) {
+      console.error(error);
+      setProgressMessage("수련 진도를 수정하지 못했습니다.");
+    } finally {
+      setIsProgressSaving(false);
+    }
+  }
+
   if (isLoading) {
     return <p>비급 정보를 불러오는 중...</p>;
   }
@@ -129,6 +186,10 @@ function BookEditPage() {
   if (!book) {
     return <p>{message || "존재하지 않는 비급입니다."}</p>;
   }
+
+  const progressPercent = Math.round(
+    (book.progress_page / book.total_pages) * 100,
+  );
 
   return (
     <main>
@@ -243,6 +304,45 @@ function BookEditPage() {
           {isSaving ? "수정 중..." : "수정 완료"}
         </button>
       </form>
+
+      <hr />
+
+      <section>
+        <h2>수련 진도 수정</h2>
+
+        <p>
+          현재 수련 기록: {book.progress_page} / {book.total_pages}쪽 (
+          {progressPercent}%)
+        </p>
+
+        <div>
+          <label htmlFor="progressPage">수련 완료 페이지</label>
+
+          <input
+            id="progressPage"
+            type="number"
+            min="1"
+            max={book.total_pages}
+            value={progressPageInput}
+            onChange={(event) => {
+              setProgressPageInput(event.target.value);
+              setProgressMessage("");
+            }}
+          />
+
+          <span> / {book.total_pages}쪽</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleProgressSave}
+          disabled={isProgressSaving}
+        >
+          {isProgressSaving ? "기록 중..." : "수련 진도 저장"}
+        </button>
+
+        {progressMessage && <p>{progressMessage}</p>}
+      </section>
     </main>
   );
 }

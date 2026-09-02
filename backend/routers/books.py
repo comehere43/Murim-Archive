@@ -14,10 +14,10 @@ from config import UPLOAD_DIR
 from models import Book
 from schemas.books import (
     PositionUpdate,
-    ProgressUpdate,
+    ProgressPageUpdate,
     BookUpdate,
     BookResponse,
-    ProgressResponse,
+    ProgressPageResponse,
     PositionResponse,
     DeleteBookResponse,
 )
@@ -165,6 +165,7 @@ async def create_book(
         total_pages=total_pages,
         current_page=1,
         max_read_page=1,
+        progress_page=1,
         cover_style=cover_style,
         cover_color=cover_color,
     )
@@ -223,11 +224,11 @@ def get_book(
 
 @router.patch(
     "/{book_id}/progress",
-    response_model=ProgressResponse,
+    response_model=ProgressPageResponse,
 )
 def update_book_progress(
     book_id: int,
-    progress: ProgressUpdate,
+    progress: ProgressPageUpdate,
     db: Session = Depends(get_db),
 ):
     book = db.query(Book).filter(Book.id == book_id).first()
@@ -238,20 +239,23 @@ def update_book_progress(
             detail="Book not found",
         )
 
-    if progress.current_page < 1:
+    if progress.progress_page < 1:
         raise HTTPException(
             status_code=400,
             detail="Invalid page number",
         )
 
-    if progress.current_page > book.total_pages:
+    if progress.progress_page > book.total_pages:
         raise HTTPException(
             status_code=400,
             detail="Page exceeds total pages",
         )
 
-    if progress.current_page > book.max_read_page:
-        book.max_read_page = progress.current_page
+    book.progress_page = progress.progress_page
+
+    # 기존 max_read_page는 당분간 호환용으로 유지
+    if progress.progress_page > book.max_read_page:
+        book.max_read_page = progress.progress_page
 
     try:
         db.commit()
@@ -267,7 +271,7 @@ def update_book_progress(
 
     return {
         "id": book.id,
-        "max_read_page": book.max_read_page,
+        "progress_page": book.progress_page,
     }
 
 

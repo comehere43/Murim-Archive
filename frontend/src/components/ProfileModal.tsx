@@ -57,7 +57,7 @@ function ProfileModal({ onClose }: ProfileModalProps) {
   const totalBooks = books.length;
 
   const completedBooks = books.filter(
-    (book) => book.max_read_page >= book.total_pages,
+    (book) => book.progress_page >= book.total_pages,
   ).length;
 
   const totalReadPages = realmInfo?.total_read_pages ?? 0;

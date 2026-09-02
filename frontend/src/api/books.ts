@@ -11,6 +11,7 @@ export type Book = {
   total_pages: number;
   current_page: number;
   max_read_page: number;
+  progress_page: number;
   cover_style: string | null;
   cover_color: string | null;
 };
@@ -35,14 +36,14 @@ export async function getBook(bookId: string): Promise<Book> {
   return response.json();
 }
 
-export async function saveBookProgress(bookId: number, currentPage: number) {
+export async function saveBookProgress(bookId: number, progressPage: number) {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/progress`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      current_page: currentPage,
+      progress_page: progressPage,
     }),
   });
 

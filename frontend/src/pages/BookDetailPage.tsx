@@ -44,10 +44,10 @@ function BookDetailPage() {
 
   const progress =
     book.total_pages > 0
-      ? Math.round((book.max_read_page / book.total_pages) * 100)
+      ? Math.round((book.progress_page / book.total_pages) * 100)
       : 0;
 
-  const realm = getBookRealm(book.max_read_page, book.total_pages);
+  const realm = getBookRealm(book.progress_page, book.total_pages);
 
   async function handleDelete() {
     const confirmed = window.confirm("이 비급을 서고에서 삭제하시겠습니까?");
@@ -80,7 +80,7 @@ function BookDetailPage() {
       </p>
 
       <p>
-        진행률 {progress}% · {book.max_read_page} / {book.total_pages} 페이지
+        진행률 {progress}% · {book.progress_page} / {book.total_pages} 페이지
       </p>
 
       <p>수련 경지: {realm}</p>
